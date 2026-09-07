@@ -12,7 +12,7 @@ interface Ticket {
 export default function Home() {
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [step, setStep] = useState(1);
-  const [quantity, setQuantity] = useState(1);
+  const [quantity, setQuantity] = useState<number | ''>(1);
   const [formData, setFormData] = useState({ name: '', phone: '' });
   const [myTickets, setMyTickets] = useState<Ticket[]>([]);
   const [revealedCount, setRevealedCount] = useState(0);
@@ -37,13 +37,14 @@ export default function Home() {
 
   const handleParticipate = async (e: React.FormEvent) => {
     e.preventDefault();
+    const finalQuantity = quantity === '' ? 1 : Number(quantity);
     setLoading(true);
     try {
-     const { data, error } = await supabase.rpc('assign_random_tickets', {
-  num_tickets: Number(quantity), // Asegúrate de que tu variable de cantidad personalizada se llame así aquí
-  p_name: formData.name,
-  p_phone: formData.phone
-});
+      const { data, error } = await supabase.rpc('assign_random_tickets', {
+        num_tickets: finalQuantity,
+        p_name: formData.name,
+        p_phone: formData.phone
+      });
 
       if (error) throw error;
       
@@ -66,9 +67,6 @@ export default function Home() {
 
   const totalToPay = myTickets.reduce((sum, ticket) => sum + ticket.id, 0);
   const ticketNumbers = myTickets.map(t => `#${t.id}`).join(', ');
-
-  const whatsappMessage = `¡Hola! Participé en la rifa de handball de Mijael. Mis boletos son ${ticketNumbers}. Mi total a pagar es $${totalToPay} MXN. Aquí adjunto mi comprobante.`;
-  const whatsappUrl = `https://wa.me/526624337540?text=${encodeURIComponent(whatsappMessage)}`;
 
   return (
     <main className="min-h-screen bg-gray-50 text-gray-900 pb-12">
@@ -94,19 +92,29 @@ export default function Home() {
           </div>
         )}
 
-      {step === 2 && (
+        {step === 2 && (
           <form onSubmit={handleParticipate} className="bg-white p-8 rounded-2xl shadow-xl">
             <h2 className="text-2xl font-bold mb-6 text-center">Registra tus datos</h2>
             <div className="mb-4">
               <label className="block font-bold mb-2">¿Cuántos boletos quieres?</label>
               <input 
-                type="number" 
-                min="1" 
-                max="100" 
+                type="text" 
+                inputMode="numeric"
+                pattern="[0-9]*"
                 required
                 className="w-full p-3 border rounded-lg bg-gray-50 text-lg font-bold" 
                 value={quantity} 
-                onChange={e => setQuantity(Math.max(1, parseInt(e.target.value) || 1))} 
+                onChange={e => {
+                  const val = e.target.value;
+                  if (val === '') {
+                    setQuantity('');
+                  } else {
+                    const num = parseInt(val, 10);
+                    if (!isNaN(num) && num <= 100) {
+                      setQuantity(num);
+                    }
+                  }
+                }} 
               />
               <p className="text-xs text-gray-500 mt-2">Escribe la cantidad de boletos que deseas. El costo total dependerá de los números que descubras al raspar.</p>
             </div>
@@ -124,20 +132,20 @@ export default function Home() {
           </form>
         )}
 
-      {step === 3 && (
-          <div className="bg-white p-8 rounded-2xl shadow-xl text-center flex flex-col items-center">
+        {step === 3 && (
+          <div className="bg-white p-6 sm:p-8 rounded-2xl shadow-xl text-center flex flex-col items-center">
             <h2 className="text-2xl font-black text-blue-800 mb-6">¡Descubre tus números!</h2>
-            <div className="flex flex-wrap justify-center gap-6 mb-8">
+            <div className="flex flex-wrap justify-center gap-4 sm:gap-6 mb-8 w-full">
               {myTickets.map(ticket => (
                 <ScratchCard key={ticket.id} ticketNumber={ticket.id} onReveal={handleReveal} />
               ))}
             </div>
 
             {revealedCount === myTickets.length && (
-              <div className="w-full bg-blue-50 border border-blue-200 p-6 rounded-xl max-w-lg mx-auto animate-fade-in">
+              <div className="w-full bg-blue-50 border border-blue-200 p-4 sm:p-6 rounded-xl max-w-lg mx-auto animate-fade-in block">
                 <h3 className="text-xl font-bold mb-4 text-center">RESUMEN FINAL</h3>
                 <p className="text-lg mb-2">Boletos obtenidos: <strong>{ticketNumbers}</strong></p>
-                <p className="text-3xl font-black text-green-600 mb-6">TOTAL A PAGAR: ${totalToPay} MXN</p>
+                <p className="text-2xl sm:text-3xl font-black text-green-600 mb-6">TOTAL A PAGAR: ${totalToPay} MXN</p>
                 
                 <div className="bg-white p-4 rounded-lg shadow-inner text-left mb-6 text-sm">
                   <p className="font-bold text-gray-700 mb-2">Instrucciones de Pago:</p>
@@ -150,7 +158,7 @@ export default function Home() {
                   href={`https://wa.me/526624337540?text=${encodeURIComponent(`Hola Mijael, ya separé mis boletos para la rifa de handball (${ticketNumbers}). Mi total es de $${totalToPay} MXN. Aquí te mando mi comprobante.`)}`} 
                   target="_blank" 
                   rel="noopener noreferrer" 
-                  className="block w-full bg-[#25D366] hover:bg-[#1EBE5D] text-white font-bold py-4 rounded-xl shadow-md text-center transition-colors"
+                  className="block w-full bg-[#25D366] hover:bg-[#1EBE5D] text-white font-bold py-4 rounded-xl shadow-md text-center transition-colors text-base sm:text-lg"
                 >
                   📲 ENVIAR COMPROBANTE POR WHATSAPP
                 </a>
