@@ -37,6 +37,7 @@ export default function Home() {
 
   const handleParticipate = async (e: React.FormEvent) => {
     e.preventDefault();
+    // Si la casilla está en blanco, usa 1 automáticamente
     const finalQuantity = quantity === '' ? 1 : Number(quantity);
     setLoading(true);
     try {
@@ -100,23 +101,20 @@ export default function Home() {
               <input 
                 type="text" 
                 inputMode="numeric"
-                pattern="[0-9]*"
-                required
                 className="w-full p-3 border rounded-lg bg-gray-50 text-lg font-bold" 
                 value={quantity} 
                 onChange={e => {
-                  const val = e.target.value;
+                  // Forzamos a que solo acepte números, eliminando el "required"
+                  const val = e.target.value.replace(/[^0-9]/g, '');
                   if (val === '') {
                     setQuantity('');
                   } else {
                     const num = parseInt(val, 10);
-                    if (!isNaN(num) && num <= 100) {
-                      setQuantity(num);
-                    }
+                    if (num <= 100) setQuantity(num);
                   }
                 }} 
               />
-              <p className="text-xs text-gray-500 mt-2">Escribe la cantidad de boletos que deseas. El costo total dependerá de los números que descubras al raspar.</p>
+              <p className="text-xs text-gray-500 mt-2">Déjalo en blanco para pedir 1 boleto, o escribe la cantidad que desees (máximo 100).</p>
             </div>
             <div className="mb-4">
               <label className="block font-bold mb-2">Nombre Completo</label>
@@ -135,35 +133,35 @@ export default function Home() {
         {step === 3 && (
           <div className="bg-white p-6 sm:p-8 rounded-2xl shadow-xl text-center flex flex-col items-center">
             <h2 className="text-2xl font-black text-blue-800 mb-6">¡Descubre tus números!</h2>
+            
             <div className="flex flex-wrap justify-center gap-4 sm:gap-6 mb-8 w-full">
               {myTickets.map(ticket => (
                 <ScratchCard key={ticket.id} ticketNumber={ticket.id} onReveal={handleReveal} />
               ))}
             </div>
 
-            {revealedCount === myTickets.length && (
-              <div className="w-full bg-blue-50 border border-blue-200 p-4 sm:p-6 rounded-xl max-w-lg mx-auto animate-fade-in block">
-                <h3 className="text-xl font-bold mb-4 text-center">RESUMEN FINAL</h3>
-                <p className="text-lg mb-2">Boletos obtenidos: <strong>{ticketNumbers}</strong></p>
-                <p className="text-2xl sm:text-3xl font-black text-green-600 mb-6">TOTAL A PAGAR: ${totalToPay} MXN</p>
-                
-                <div className="bg-white p-4 rounded-lg shadow-inner text-left mb-6 text-sm">
-                  <p className="font-bold text-gray-700 mb-2">Instrucciones de Pago:</p>
-                  <p><strong>Banco:</strong> Klar</p>
-                  <p><strong>Nombre:</strong> Carmen Zavala</p>
-                  <p><strong>CLABE (SPEI):</strong> 661610005936710133</p>
-                </div>
-
-                <a 
-                  href={`https://wa.me/526624337540?text=${encodeURIComponent(`Hola Mijael, ya separé mis boletos para la rifa de handball (${ticketNumbers}). Mi total es de $${totalToPay} MXN. Aquí te mando mi comprobante.`)}`} 
-                  target="_blank" 
-                  rel="noopener noreferrer" 
-                  className="block w-full bg-[#25D366] hover:bg-[#1EBE5D] text-white font-bold py-4 rounded-xl shadow-md text-center transition-colors text-base sm:text-lg"
-                >
-                  📲 ENVIAR COMPROBANTE POR WHATSAPP
-                </a>
+            {/* SECCIÓN DE PAGO: Ahora aparece SIEMPRE, sin esperar a que se raspen los boletos */}
+            <div className="w-full bg-blue-50 border border-blue-200 p-4 sm:p-6 rounded-xl max-w-lg mx-auto block mt-4">
+              <h3 className="text-xl font-bold mb-4 text-center">RESUMEN FINAL</h3>
+              <p className="text-lg mb-2">Boletos obtenidos: <strong>{ticketNumbers}</strong></p>
+              <p className="text-2xl sm:text-3xl font-black text-green-600 mb-6">TOTAL A PAGAR: ${totalToPay} MXN</p>
+              
+              <div className="bg-white p-4 rounded-lg shadow-inner text-left mb-6 text-sm">
+                <p className="font-bold text-gray-700 mb-2">Instrucciones de Pago:</p>
+                <p><strong>Banco:</strong> Klar</p>
+                <p><strong>Nombre:</strong> Carmen Zavala</p>
+                <p><strong>CLABE (SPEI):</strong> 661610005936710133</p>
               </div>
-            )}
+
+              <a 
+                href={`https://wa.me/526624337540?text=${encodeURIComponent(`Hola Mijael, ya separé mis boletos para la rifa de handball (${ticketNumbers}). Mi total es de $${totalToPay} MXN. Aquí te mando mi comprobante.`)}`} 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="block w-full bg-[#25D366] hover:bg-[#1EBE5D] text-white font-bold py-4 rounded-xl shadow-md text-center transition-colors text-base sm:text-lg"
+              >
+                📲 ENVIAR COMPROBANTE POR WHATSAPP
+              </a>
+            </div>
           </div>
         )}
 
